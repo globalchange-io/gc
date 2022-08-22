@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
+    <title>GC Minting (Example)</title>
+  </head>
+</head>
+<body>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/stellar-sdk/10.1.0/stellar-sdk.js"></script>
+<script src="common.js"></script>
+<script>
+
+$( document ).ready(function() {
+  $.ajax({
+     url: "https://api.coingecko.com/api/v3/simple/price?ids=stellar&vs_currencies=usd",
+     success: function(result) {
+         document.getElementById("xlmusd").value = result.stellar.usd;
+     },
+     error: function(e) {
+        document.getElementById("xlmusd").value = "ERROR"
+     }
+  });
+});
+
+function validateInput() {
+  //secretKey text input is not secure and for non-testnet use this should leverage a lumen wallet
+
+  const inputs = [
+    document.getElementById("secretKey").value,
+    document.getElementById("recipient1PublicKey").value,
+    document.getElementById("recipient2PublicKey").value,
+    document.getElementById("recipient3PublicKey").value,
+    document.getElementById("recipient4PublicKey").value,
+    document.getElementById("recipient5PublicKey").value,
+    document.getElementById("Amount").value,
+    document.getElementById("cpiValue").value,
+    document.getElementById("xlmusd").value
+  ]
+
+  var filteredInputs = inputs.filter((i) => i);
+
+  if (filteredInputs.length != inputs.length) {
+    alert("Must provide input to all fields!");
+    return false;
+  } else {
+    return true;
+  }
+
+}
+
+async function submitTransaction() {
+  if (!validateInput()) {
+    return false;
+  }
+
+  document.getElementById("output").innerHTML = "Sending XLM to recipients...";
+
+  const transaction = await donate(
+    document.getElementById("secretKey").value,
+    document.getElementById("recipient1PublicKey").value,
+    document.getElementById("recipient2PublicKey").value,
+    document.getElementById("recipient3PublicKey").value,
+    document.getElementById("recipient4PublicKey").value,
+    document.getElementById("recipient5PublicKey").value,
+    document.getElementById("Amount").value,
+    document.getElementById("cpiValue").value,
+    document.getElementById("xlmusd").value
+  );
+
+  document.getElementById("output").innerHTML = "<b>Donate Transaction</b> <br>" + transaction.transactionLink;
+
+  const faceValue = 1;
+
+  document.getElementById("minted").innerHTML = "Minting, may take a few minutes...";
+  const minted = await mint(
+      document.getElementById("secretKey").value,
+      transaction.transactionSequence,
+      transaction.gcAmount,
+      String(faceValue)
+  );
+  console.log("Minted: ", minted)
+
+  document.getElementById("minted").innerHTML = "<b>Minted Tokens</b><br><br>";
+  minted.forEach(
+    item => document.getElementById("minted").innerHTML = document.getElementById("minted").innerHTML +
+              "<a href=\"" + item.transactionLink + "\">" +
+              "Serial: " + item.serialNumber + ", FaceValue: " + item.faceValue +
+              "</a><br /><br />"
+  );
+
+}
+
+</script>
+<div class="d-md-flex h-md-100 align-items-center">
+<div class="col-md-4 p-1 bg-indigo h-md-80">
+    <div class="align-items-left h-80 p-4">
+<h3>GC Token Mint (example)</h3>
+</div>
+</div>
+</div>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-lg-4">
+
+          <form id="transact" class="form padding-1" action="" onsubmit="submitTransaction(); return false; ">
+            <div class="form-group">
+              <label for="secretKey">Secret Key (testing only!):</label>
+              <input type="text" class="form-control" id="secretKey">
+              <small id="emailHelp" class="form-text text-muted">https://laboratory.stellar.org/#account-creator?network=test</small>
+            </div>
+            <div class="form-group">
+              <label for="recipient1PublicKey">Recipient 1</label>
+              <input type="text" class="form-control" id="recipient1PublicKey">
+            </div>
+            <div class="form-group">
+              <label for="recipient2PublicKey">Recipient 2</label>
+              <input type="text" class="form-control" id="recipient2PublicKey">
+            </div>
+            <div class="form-group">
+              <label for="recipient3PublicKey">Recipient 3</label>
+              <input type="text" class="form-control" id="recipient3PublicKey">
+            </div>
+            <div class="form-group">
+              <label for="recipient4PublicKey">Recipient 4</label>
+              <input type="text" class="form-control" id="recipient4PublicKey">
+            </div>
+            <div class="form-group">
+              <label for="recipient5PublicKey">Recipient 5</label>
+              <input type="text" class="form-control" id="recipient5PublicKey">
+            </div>
+            <div class="row pl-1">
+            <div class="form-group w-25 px-2">
+              <label for="Amount">Amount</label>
+              <input type="text" class="form-control" id="Amount">
+            </div>
+            <div class="form-group w-25 px-2">
+              <label for="cpiValue">cpiValue</label>
+              <input type="text" class="form-control" id="cpiValue" value="288.66">
+            </div>
+            <div class="form-group w-25 px-2">
+              <label for="xlmusd">XLM/USD</label>
+              <input type="text" class="form-control bg-light" id="xlmusd">
+            </div>
+          </div>
+            <button type="submit" class="btn btn-primary">Submit</button>
+          </form>
+
+        </div>
+        <div class="col-lg-3 m-5">
+          <div class="row">
+          <p id="output" class="w-80"></p>
+        </div>
+        <br />
+        <div class="row">
+        <p id="minted" class="w-80"></p>
+      </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
